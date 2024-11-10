@@ -1,0 +1,314 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+
+model WebUser {
+  webUser_id      Int       @id @default(autoincrement())
+  first_name      String?   @db.VarChar(100)
+  last_name       String?   @db.VarChar(100)
+  contact_number  String?   @db.VarChar(20)
+  email           String    @unique @db.VarChar(100)
+  created_at      DateTime? @default(now()) @db.DateTime(0)
+  updated_at      DateTime? @updatedAt @db.DateTime(0)
+  uid             String    @db.VarChar(28)
+  isActive        Boolean
+  urlFile         String?   @db.VarChar(255)
+  role            Roles?    @relation(fields: [roleId], references: [role_id])
+  roleId          Int?
+}
+
+model Roles {
+  role_id         Int               @id @default(autoincrement())
+  role_name       String?           @db.VarChar(255)
+  description     String?           @db.Text
+  created_at      DateTime?         @default(now()) @db.DateTime(0)
+  updated_at      DateTime?         @default(now()) @db.DateTime(0)
+  RolePermissions RolePermissions[]
+  Doctors         Doctors[]
+  WebUsers        WebUser[]
+}
+
+model Doctors {
+  doctor_id      Int              @id @default(autoincrement())
+  first_name     String?          @db.VarChar(100)
+  last_name      String?          @db.VarChar(100)
+  specialty      String?          @db.VarChar(100)
+  contact_number String?          @db.VarChar(20)
+  email          String           @unique @db.VarChar(100)
+  clinic_address String?          @db.VarChar(255)
+  created_at     DateTime?        @default(now()) @db.DateTime(0)
+  updated_at     DateTime?        @updatedAt @db.DateTime(0)
+  uid            String           @db.VarChar(28)
+  isActive       Boolean
+  urlIne         String?          @db.VarChar(255)
+  urlCedula      String?          @db.VarChar(255)
+  urlConstancia  String?          @db.VarChar(255)
+  urlBanco       String?          @db.VarChar(255)
+  urlDomicilio   String?          @db.VarChar(255)
+  PaymentLetters PaymentLetters[]
+  PaymentMethods PaymentMethods[]
+  Subscriptions  Subscriptions[]
+  role            Roles?    @relation(fields: [roleId], references: [role_id])
+  roleId          Int?
+}
+
+model PaymentMethods {
+  id               Int       @id @unique(map: "id") @default(autoincrement()) @db.UnsignedInt
+  doctor_id        Int
+  cardNumberHidden String    @db.VarChar(50)
+  cardNumber       String    @db.VarChar(50)
+  brand            String    @db.VarChar(100)
+  created_at       DateTime? @default(now()) @db.Timestamp(0)
+  updated_at       DateTime? @default(now()) @updatedAt @db.Timestamp(0)
+  cardHolderName   String?   @db.VarChar(100)
+  cvv              String?   @db.VarChar(3)
+  expiracyDate     String?   @db.VarChar(5)
+  doctor           Doctors   @relation(fields: [doctor_id], references: [doctor_id], onDelete: NoAction, onUpdate: NoAction, map: "PaymentMethods_ibfk_1")
+
+  @@index([doctor_id], map: "doctor_id")
+}
+
+model InsuranceCompanies {
+  insurance_id   Int              @id @default(autoincrement())
+  company_name   String?          @db.VarChar(255)
+  contact_number String?          @db.VarChar(50)
+  email          String?          @db.VarChar(255)
+  address        String?          @db.VarChar(255)
+  created_at     DateTime?        @default(now()) @db.DateTime(0)
+  updated_at     DateTime?        @default(now()) @updatedAt @db.DateTime(0)
+  PaymentLetters PaymentLetters[]
+}
+
+model Patients {
+  patient_id     Int              @id @default(autoincrement())
+  first_name     String?          @db.VarChar(255)
+  last_name      String?          @db.VarChar(255)
+  date_of_birth  DateTime?        @db.Date
+  contact_number String?          @db.VarChar(50)
+  email          String?          @db.VarChar(255)
+  created_at     DateTime?        @default(now()) @db.DateTime(0)
+  updated_at     DateTime?        @default(now()) @updatedAt @db.DateTime(0)
+  PaymentLetters PaymentLetters[]
+}
+
+model PaymentLetters {
+  payment_letter_id Int                 @id @default(autoincrement())
+  letter_number     String?             @unique(map: "letter_number") @db.VarChar(255)
+  doctor_id         Int?
+  insurance_id      Int?
+  patient_id        Int?
+  service_date      DateTime?           @db.Date
+  status            Status?
+  total_commission  Decimal?            @default(0.00) @db.Decimal(10, 2)
+  created_at        DateTime?           @default(now()) @db.DateTime(0)
+  updated_at        DateTime?           @default(now()) @updatedAt @db.DateTime(0)
+  urlFile           String?             @db.VarChar(255)
+  Commissions       Commissions[]
+  doctor            Doctors?            @relation(fields: [doctor_id], references: [doctor_id], onDelete: NoAction, onUpdate: NoAction, map: "PaymentLetters_ibfk_1")
+  insuranceCompany  InsuranceCompanies? @relation(fields: [insurance_id], references: [insurance_id], onDelete: NoAction, onUpdate: NoAction, map: "PaymentLetters_ibfk_2")
+  patient           Patients?           @relation(fields: [patient_id], references: [patient_id], onDelete: NoAction, onUpdate: NoAction, map: "PaymentLetters_ibfk_3")
+  Payments          Payments[]
+  Services          Services[]
+
+  @@index([doctor_id], map: "doctor_id")
+  @@index([insurance_id], map: "insurance_id")
+  @@index([patient_id], map: "patient_id")
+}
+
+model Services {
+  service_id          Int             @id @default(autoincrement())
+  payment_letter_id   Int?
+  service_name        String?         @db.VarChar(255)
+  service_description String?         @db.Text
+  amount              Decimal?        @db.Decimal(10, 2)
+  created_at          DateTime?       @default(now()) @db.DateTime(0)
+  updated_at          DateTime?       @default(now()) @updatedAt @db.DateTime(0)
+  paymentLetter       PaymentLetters? @relation(fields: [payment_letter_id], references: [payment_letter_id], onDelete: NoAction, onUpdate: NoAction, map: "Services_ibfk_1")
+
+  @@index([payment_letter_id], map: "payment_letter_id")
+}
+
+model Payments {
+  payment_id        Int                      @id @default(autoincrement())
+  payment_letter_id Int?
+  payment_date      DateTime?                @db.Date
+  amount_paid       Decimal?                 @db.Decimal(10, 2)
+  payment_method    Payments_payment_method?
+  payment_status    Payments_payment_status?
+  commission_paid   Boolean?                 @default(false)
+  created_at        DateTime?                @default(now()) @db.DateTime(0)
+  updated_at        DateTime?                @default(now()) @updatedAt @db.DateTime(0)
+  paymentLetter     PaymentLetters?          @relation(fields: [payment_letter_id], references: [payment_letter_id], onDelete: NoAction, onUpdate: NoAction, map: "Payments_ibfk_1")
+
+  @@index([payment_letter_id], map: "payment_letter_id")
+}
+
+model Subscriptions {
+  subscription_id   Int                              @id @default(autoincrement())
+  subscription_type Subscriptions_subscription_type?
+  subscriber_id     Int?
+  plan_name         String?                          @db.VarChar(255)
+  plan_description  String?                          @db.Text
+  start_date        DateTime?                        @db.Date
+  end_date          DateTime?                        @db.Date
+  price             Decimal?                         @db.Decimal(10, 2)
+  status            Subscriptions_status?
+  created_at        DateTime?                        @default(now()) @db.DateTime(0)
+  updated_at        DateTime?                        @default(now()) @updatedAt @db.DateTime(0)
+  doctor            Doctors?                         @relation(fields: [subscriber_id], references: [doctor_id], onDelete: NoAction, onUpdate: NoAction, map: "Subscriptions_ibfk_1")
+
+  @@index([subscriber_id], map: "subscriber_id")
+}
+
+model Commissions {
+  commission_id         Int                           @id @default(autoincrement())
+  payment_letter_id     Int?
+  commission_type       Commissions_commission_type?
+  commission_rate       Decimal?                      @db.Decimal(5, 2)
+  calculated_commission Decimal?                      @db.Decimal(10, 2)
+  beneficiary_type      Commissions_beneficiary_type?
+  beneficiary_id        Int?
+  status                Commissions_status?
+  created_at            DateTime?                     @default(now()) @db.DateTime(0)
+  updated_at            DateTime?                     @default(now()) @updatedAt @db.DateTime(0)
+  amount                Float?                        @db.Float
+  paymentLetter         PaymentLetters?               @relation(fields: [payment_letter_id], references: [payment_letter_id], onDelete: NoAction, onUpdate: NoAction, map: "Commissions_ibfk_1")
+
+  @@index([payment_letter_id], map: "payment_letter_id")
+}
+
+model AuditLogs {
+  audit_id    Int               @id @default(autoincrement())
+  entity_name String?           @db.VarChar(255)
+  entity_id   Int?
+  action      AuditLogs_action?
+  changed_by  String?           @db.VarChar(255)
+  change_date DateTime?         @default(now()) @db.DateTime(0)
+  details     String?           @db.Text
+}
+
+model CommissionRates {
+  rate_id     Int                          @id @default(autoincrement())
+  entity_type CommissionRates_entity_type?
+  entity_id   Int?
+  rate_type   CommissionRates_rate_type?
+  rate_value  Decimal?                     @db.Decimal(5, 2)
+  valid_from  DateTime?                    @db.Date
+  valid_to    DateTime?                    @db.Date
+  created_at  DateTime?                    @default(now()) @db.DateTime(0)
+  updated_at  DateTime?                    @default(now()) @db.DateTime(0)
+}
+
+model Notifications {
+  notification_id   Int                              @id @default(autoincrement())
+  user_id           Int?
+  notification_type Notifications_notification_type?
+  message           String?                          @db.Text
+  status            Notifications_status?
+  created_at        DateTime?                        @default(now()) @db.DateTime(0)
+  updated_at        DateTime?                        @default(now()) @db.DateTime(0)
+}
+
+model Permissions {
+  permission_id   Int               @id @default(autoincrement())
+  permission_name String?           @db.VarChar(255)
+  description     String?           @db.Text
+  created_at      DateTime?         @default(now()) @db.DateTime(0)
+  updated_at      DateTime?         @default(now()) @db.DateTime(0)
+  RolePermissions RolePermissions[]
+}
+
+model RolePermissions {
+  role_permission_id Int          @id @default(autoincrement())
+  role_id            Int?
+  permission_id      Int?
+  created_at         DateTime?    @default(now()) @db.DateTime(0)
+  updated_at         DateTime?    @default(now()) @db.DateTime(0)
+  Roles              Roles?       @relation(fields: [role_id], references: [role_id], onDelete: NoAction, onUpdate: NoAction, map: "RolePermissions_ibfk_1")
+  Permissions        Permissions? @relation(fields: [permission_id], references: [permission_id], onDelete: NoAction, onUpdate: NoAction, map: "RolePermissions_ibfk_2")
+
+  @@index([permission_id], map: "permission_id")
+  @@index([role_id], map: "role_id")
+}
+
+enum Status {
+  Pending
+  Approved
+  Rejected
+  Paid
+}
+
+enum CommissionRates_entity_type {
+  Doctor
+  Agent
+  Insurance_Company @map("Insurance Company")
+}
+
+enum Subscriptions_subscription_type {
+  Doctor
+  Insurance_Company @map("Insurance Company")
+}
+
+enum Commissions_commission_type {
+  Percentage
+  Fixed
+}
+
+enum Notifications_notification_type {
+  Payment_Reminder     @map("Payment Reminder")
+  Subscription_Renewal @map("Subscription Renewal")
+  Commission_Payment   @map("Commission Payment")
+}
+
+enum CommissionRates_rate_type {
+  Percentage
+  Fixed
+}
+
+enum AuditLogs_action {
+  INSERT
+  UPDATE
+  DELETE
+}
+
+enum Notifications_status {
+  Pending
+  Sent
+  Read
+}
+
+enum Payments_payment_method {
+  Bank_Transfer @map("Bank Transfer")
+  Credit_Card   @map("Credit Card")
+  Check
+}
+
+enum Commissions_beneficiary_type {
+  Doctor
+  Agent
+  Other
+}
+
+enum Payments_payment_status {
+  Pending
+  Completed
+  Failed
+}
+
+enum Commissions_status {
+  Pending
+  Paid
+  Cancelled
+}
+
+enum Subscriptions_status {
+  Active
+  Expired
+  Cancelled
+}
